@@ -39,7 +39,7 @@ program
     checkBalance(config);
   });
 
-  program
+program
   .command("balanceplaintext")
   .alias("bp")
   .description("Fetch your Starling account balance as plaintext")

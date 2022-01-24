@@ -100,7 +100,6 @@ export async function init(config) {
 }
 
 export async function checkBalance(config) {
-    const options = program.opts();
     const spinner = ora({ text: 'Fetching balances...', color: 'yellow' }).start();
     try {
         const accounts = config.get('accounts');
@@ -179,7 +178,7 @@ export async function listTransactions(config) {
     }
 }
 
-export async function listTransactionsForDate(config) {
+export async function listTransactionsForDate(config, options) {
     const accounts = config.get('accounts');
     const questions = [
         {
@@ -216,8 +215,9 @@ export async function listTransactionsForDate(config) {
             }
         });
         spinner.stop();
-        //console.log(data);
         displayTransactions(data.feedItems);
+        var dateAmount = data.feedItems.reduce((partial_sum, a) => partial_sum + a.amount.minorUnits, 0) / 100;
+        console.log("Total for date is: " + dateAmount);
     } catch ({ error }) {
         console.log(error);
         spinner.fail(error.error_description);
