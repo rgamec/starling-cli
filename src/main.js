@@ -6,6 +6,7 @@ import accounting from 'accounting';
 import columnify from 'columnify';
 import chalk from 'chalk';
 import open from 'open';
+import { program } from 'commander';
 
 const currencyMap = {
     GBP: '£',
@@ -43,6 +44,10 @@ function isValidDate(dateString) {
 function getFirstDayOfMonth() {
     const date = new Date();
     return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function getCurrentDay() {
+    return new Date();
 }
 
 function formatDate(date, time = false) {
@@ -95,6 +100,7 @@ export async function init(config) {
 }
 
 export async function checkBalance(config) {
+    const options = program.opts();
     const spinner = ora({ text: 'Fetching balances...', color: 'yellow' }).start();
     try {
         const accounts = config.get('accounts');
@@ -113,6 +119,26 @@ export async function checkBalance(config) {
         console.log(boxen(balances.join('\n'), { padding: 1, margin: 1, borderStyle: 'double', borderColor: 'green' }));
     } catch ({ error }) {
         spinner.fail(error.error_description);
+    }
+}
+
+export async function checkBalancePlaintext(config) {
+    try {
+        const accounts = config.get('accounts');
+        const balances = [];
+        for (const acc of accounts) {
+            const token = config.get('token');
+            const { data } = await axios.get(`https://api.starlingbank.com/api/v2/accounts/${acc.accountUid}/balance`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            const balance = accounting.formatMoney(data.effectiveBalance.minorUnits / 100, { symbol: currencyMap[acc.currency] });
+            balances.push(balance);
+        }
+        console.log(balances.join('\n'));
+    } catch ({ error }) {
+        console.log(error.error_description);
     }
 }
 
@@ -149,6 +175,51 @@ export async function listTransactions(config) {
         spinner.stop();
         displayTransactions(data.feedItems);
     } catch ({ error }) {
+        spinner.fail(error.error_description);
+    }
+}
+
+export async function listTransactionsForDate(config) {
+    const accounts = config.get('accounts');
+    const questions = [
+        {
+            type: 'list',
+            name: 'account',
+            message: 'Select account',
+            choices: accounts.map(a => ({ name: a.currency, value: a }))
+        },
+        {
+            name: 'specificDate',
+            message: 'Transactions date (YYYY-MM-DD)',
+            default: formatDate(getCurrentDay()),
+            validate: (input) => {
+                return isValidDate(input) ? true : 'Date is invalid. Re-enter'
+            }
+        }
+    ];
+    const { account, specificDate } = await inquirer.prompt(questions);
+    const spinner = ora({ text: 'Fetching transactions...', color: 'yellow' }).start();
+    try {
+        const token = config.get('token');
+        var currentDate = new Date(specificDate);
+        var startDay = currentDate.setUTCHours(0,0,0,0);
+        var endDay = currentDate.setUTCHours(23,59,59,999);
+        var startDayString = new Date(startDay).toISOString();
+        var endDayString = new Date(endDay).toISOString();
+        const { data } = await axios.get(`https://api.starlingbank.com/api/v2/feed/account/${account.accountUid}/category/${account.defaultCategory}/transactions-between`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            },
+            params: {
+                minTransactionTimestamp: startDayString,
+                maxTransactionTimestamp: endDayString
+            }
+        });
+        spinner.stop();
+        //console.log(data);
+        displayTransactions(data.feedItems);
+    } catch ({ error }) {
+        console.log(error);
         spinner.fail(error.error_description);
     }
 }

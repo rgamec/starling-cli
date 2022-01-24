@@ -8,7 +8,9 @@ import {
   init,
   checkBalance,
   listTransactions,
+  listTransactionsForDate,
   listMandates,
+  checkBalancePlaintext,
 } from "../src/main.js";
 
 const pkg = JSON.parse(
@@ -37,12 +39,28 @@ program
     checkBalance(config);
   });
 
+  program
+  .command("balanceplaintext")
+  .alias("bp")
+  .description("Fetch your Starling account balance as plaintext")
+  .action(() => {
+    checkBalancePlaintext(config);
+  });
+
 program
   .command("transactions")
   .alias("tx")
   .description("Fetch your Starling account transactions")
   .action(() => {
     listTransactions(config);
+  });
+
+  program
+  .command("transactionsfordate")
+  .alias("txd")
+  .description("Fetch your Starling account transactions for a specific date")
+  .action(() => {
+    listTransactionsForDate(config);
   });
 
 program
