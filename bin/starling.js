@@ -11,6 +11,7 @@ import {
   listTransactionsForDate,
   listMandates,
   checkBalancePlaintext,
+  returnDailySpendForCurrentMonth,
 } from "../src/main.js";
 
 const pkg = JSON.parse(
@@ -61,6 +62,14 @@ program
   .description("Fetch your Starling account transactions for a specific date")
   .action(() => {
     listTransactionsForDate(config);
+  });
+
+  program
+  .command("returnDailySpendForCurrentMonth")
+  .alias("mspend")
+  .description("Fetch your daily Starling account spend for the current month to date")
+  .action(() => {
+    returnDailySpendForCurrentMonth(config);
   });
 
 program

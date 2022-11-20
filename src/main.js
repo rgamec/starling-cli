@@ -141,6 +141,49 @@ export async function checkBalancePlaintext(config) {
     }
 }
 
+export async function returnDailySpendForCurrentMonth(config) {
+    const account = config.get('accounts')[0]; // Assume only one account
+    var currentDate = new Date();
+    var dateToCheck = new Date(currentDate.getFullYear() + '-' + (currentDate.getMonth()+1) + '-1');
+
+    try {
+        const token = config.get('token');
+ 
+        // iterate through each day of the month to date
+        for (var i = 1; i <= currentDate.getDate(); i++){
+            
+            dateToCheck.setDate(dateToCheck.getDate() + i);
+            var startDay = dateToCheck.setUTCHours(0,0,0,0);
+            var endDay = dateToCheck.setUTCHours(23,59,59,999);
+            var startDayString = new Date(startDay).toISOString();
+            var endDayString = new Date(endDay).toISOString();
+
+            process.stdout.write(String(dateToCheck.getFullYear()) + '-' +
+            String(dateToCheck.getMonth()+1) + '-' +
+            i + ',');
+
+            const { data } = await axios.get(`https://api.starlingbank.com/api/v2/feed/account/${account.accountUid}/category/${account.defaultCategory}/transactions-between`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                },
+                params: {
+                    minTransactionTimestamp: startDayString,
+                    maxTransactionTimestamp: endDayString
+                }
+            });
+
+            // Filter for only outbound transactions
+            data.feedItems = data.feedItems.filter(transaction => transaction.direction == 'OUT')
+            var dateAmount = data.feedItems.reduce((partial_sum, a) => partial_sum + a.amount.minorUnits, 0) / 100;
+            
+            process.stdout.write(String(dateAmount) + '\n');
+            dateToCheck.setDate(0);
+        }
+    } catch ({ error }) {
+        console.log(error);
+    }
+}
+
 export async function listTransactions(config) {
     const accounts = config.get('accounts');
     const questions = [
