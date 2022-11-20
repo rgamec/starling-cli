@@ -6,7 +6,6 @@ import accounting from 'accounting';
 import columnify from 'columnify';
 import chalk from 'chalk';
 import open from 'open';
-import { program } from 'commander';
 
 const currencyMap = {
     GBP: '£',
@@ -44,10 +43,6 @@ function isValidDate(dateString) {
 function getFirstDayOfMonth() {
     const date = new Date();
     return new Date(date.getFullYear(), date.getMonth(), 1);
-}
-
-function getCurrentDay() {
-    return new Date();
 }
 
 function formatDate(date, time = false) {
@@ -233,7 +228,7 @@ export async function listTransactionsForDate(config, options) {
         {
             name: 'specificDate',
             message: 'Transactions date (YYYY-MM-DD)',
-            default: formatDate(getCurrentDay()),
+            default: formatDate(new Date()),
             validate: (input) => {
                 return isValidDate(input) ? true : 'Date is invalid. Re-enter'
             }
