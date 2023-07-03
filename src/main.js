@@ -263,7 +263,8 @@ export async function listTransactionsForDate(config, options) {
         });
         spinner.stop();
         displayTransactions(data.feedItems);
-        var dateAmount = data.feedItems.reduce((partial_sum, a) => partial_sum + a.amount.minorUnits, 0) / 100;
+        var dateAmount = data.feedItems.filter(feedItem => feedItem.direction == 'OUT').reduce((partial_sum, a) => partial_sum + a.amount.minorUnits, 0) / 100;
+        dateAmount = accounting.formatMoney(dateAmount, { symbol: currencyMap['GBP'] });
         console.log("Total for date is: " + dateAmount);
     } catch ({ error }) {
         console.log(error);
